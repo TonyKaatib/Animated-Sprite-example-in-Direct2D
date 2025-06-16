@@ -1,0 +1,1 @@
+This is a basic, functioning example of a sprite animation using Direct2D's DeviceContext3 and the SpriteBatch interface. To my knowledge there is no online tutorial on how to animate sprites purely by Direct2D, and so I had to work on it myself.
