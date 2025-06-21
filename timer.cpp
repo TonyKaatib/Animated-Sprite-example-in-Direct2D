@@ -12,7 +12,7 @@ duration<float> deltatime;
 
 //
 int fpsLimit() {
-	return 10;
+	return 30;
 }
 
 int stop() {

@@ -2,6 +2,7 @@
 #include <dwrite.h>
 #include <sstream>
 #include "timer.h"
+#include "keyboard.h"
 #include "sprite.h"
 
 #pragma comment(lib, "d2d1.lib")
@@ -37,9 +38,23 @@ IWICImagingFactory* pWICFactory = nullptr;
 //
 ID2D1Bitmap* pImage = nullptr;
 ID2D1Bitmap* pImage2 = nullptr;
+ID2D1Bitmap* pWalk = nullptr;
 ID2D1SpriteBatch* sBatch = nullptr;
+ID2D1SpriteBatch* sWalk = nullptr;
 //
 UINT index;
+UINT index2;
+
+UINT x;
+UINT y;
+
+UINT xspeed;
+UINT yspeed;
+
+UINT animstate;
+UINT lastpress;
+bool isWalking;
+
 //
 /*D2D1_RECT_F pRectF = D2D1::RectF(64.f, 0, 128.f, 64.f);
 D2D1_RECT_U pRectU = D2D1::RectU(0, 0, 64, 64);*/
@@ -237,6 +252,12 @@ HRESULT InitDevice() {
 		return hr;
 	}
 
+	hr = pContext->CreateSpriteBatch(&sWalk);
+	if (FAILED(hr)) {
+		MessageBox(0, L"Failure to create sprite batch!", 0, 0);
+		return hr;
+	}
+
 	pContext->SetTarget(pBitmap);
 
 	hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_IWICImagingFactory, reinterpret_cast<void**> (&pWICFactory));
@@ -255,11 +276,19 @@ HRESULT InitDevice() {
 		return hr;
 	}
 
+	hr = LoadBitmapFromFile(pContext, pWICFactory, L"Walking.png", 0, 0, &pWalk);
+	if (FAILED(hr)) {
+		MessageBox(0, L"Failure to load bitmap!", 0, 0);
+		return hr;
+	}
+
 	D2D1_SIZE_F size = pImage->GetSize();
 	D2D1_SIZE_F newsize;
 
 	newsize.height = 0;
 	newsize.width = 0;
+
+	D2D1_SIZE_F walksize = pWalk->GetSize();
 
 	//D2D1_RECT_F pRectF = D2D1::RectF(0, 0, 128, 128.f);
 	//D2D1_RECT_U pRectU = D2D1::RectU(0, 0, 64, 64);
@@ -273,6 +302,13 @@ HRESULT InitDevice() {
 		//D2D1_RECT_U pRectU = D2D1::RectU(0, 0, 64, 64);
 		D2D1_RECT_U pRectU = D2D1::RectU(size.height * i, 0, (size.height * i) + size.height, size.height);
 		hr = sBatch->AddSprites(4, &pRectF, &pRectU, NULL, NULL, 0, 0, 0, 0);
+	}
+
+	for (int i = 1; i < 8; i++) {
+		D2D1_RECT_F pRectF = D2D1::RectF(0, 0, 54, 92);
+		//D2D1_RECT_U pRectU = D2D1::RectU(0, 0, 64, 64);
+		D2D1_RECT_U pRectU = D2D1::RectU(0, 0, 56, 92);
+		hr = sWalk->AddSprites(8, &pRectF, &pRectU, NULL, NULL, 0, 0, 0, 0);
 	}
 	const WCHAR* text;
 	UINT32 text_length;
@@ -341,20 +377,103 @@ HRESULT Render() {
 	if (index == 4)
 		index = 0;
 
-	int length = swprintf_s(wsbuffer, bufferLength, L"Love me! %1u", index);
+	index2++;
+	if (index2 == 8)
+		index2 = 0;
+
+	x += xspeed;
+	y += yspeed;
+
+	if (KEYDOWN(VK_RIGHT)) {
+		xspeed = 10;
+		animstate = RIGHT;
+		lastpress = 4;
+	}
+	if (KEYUP(VK_RIGHT)) {
+		xspeed = 0;
+	}
+
+	if (KEYDOWN(VK_LEFT)) {
+		xspeed -= 10;
+		animstate = LEFT;
+		lastpress = 3;
+	}
+	if (KEYUP(VK_LEFT)) {
+		xspeed -= 0;
+	}
+
+	if (KEYDOWN(VK_DOWN)) {
+		yspeed = 10;
+		animstate = DOWN;
+		lastpress = 0;
+	}
+	if (KEYUP(VK_DOWN)) {
+		yspeed = 0;
+	}
+
+	if (KEYDOWN(VK_UP)) {
+		yspeed -= 10;
+		animstate = UP;
+		lastpress = 7;
+	}
+	if (KEYUP(VK_UP)) {
+		yspeed -= 0;
+	}
+
+	if (KEYUP(VK_UP) && KEYUP(VK_DOWN) && KEYUP(VK_RIGHT) && KEYUP(VK_LEFT)) {
+		animstate = IDLE;
+	}
+	int length = swprintf_s(wsbuffer, bufferLength, L"Love me! %1u", animstate);
 
 	pContext->DrawText(wsbuffer, length, pTextFormat, layoutRect, pColour);
 
 	D2D1_SIZE_F spritesize;
+	D2D1_SIZE_F walksize;
+
 	spritesize.height = 64;
 	spritesize.width = 256;
+
+	walksize.height = 92;
+	walksize.width = 440;
 
 	D2D1_RECT_F pRectF = D2D1::RectF(0, 0, 256, 256);
 	//D2D1_RECT_U pRectU = D2D1::RectU(0, 0, 64, 64);
 	D2D1_RECT_U pRectU = D2D1::RectU(spritesize.height * index, 0, (spritesize.height * index) + spritesize.height, spritesize.height);
-	hr = sBatch->SetSprites(index, 4, &pRectF, &pRectU, NULL, NULL, 0, 0, 0, 0);
+	D2D1_RECT_F pRectF2 = D2D1::RectF(x + 500, y + 500, 56 + x + 500, 95 + y + 500);
+	//D2D1_RECT_U pRectU2 = D2D1::RectU(walksize.height * index, 0, (walksize.height * index) + walksize.height, walksize.height);
+
+	D2D1_RECT_U pIdleLeft = D2D1::RectU(55 * lastpress, 380, (55 * lastpress) + 55, 475);
+
+	D2D1_RECT_U pLeft = D2D1::RectU(55 * index2, 0, (55 * index2) + 55, 95);
+	D2D1_RECT_U pRight = D2D1::RectU(55 * index2, 95, (55 * index2) + 55, 190);
+	D2D1_RECT_U pUp = D2D1::RectU(55 * index2, 190, (55 * index2) + 55, 285);
+	D2D1_RECT_U pDown = D2D1::RectU(55 * index2, 285, (55 * index2) + 55, 380);
+	//hr = sBatch->SetSprites(index, 4, &pRectF, &pRectU, NULL, NULL, 0, 0, 0, 0);
+
+	switch (animstate) {
+	case (0):
+		hr = sWalk->SetSprites(index2, 8, &pRectF2, &pIdleLeft, NULL, NULL, 0, 0, 0, 0);
+		break;
+	case (1):
+		hr = sWalk->SetSprites(index2, 8, &pRectF2, &pLeft, NULL, NULL, 0, 0, 0, 0);
+		break;
+	case (2):
+		hr = sWalk->SetSprites(index2, 8, &pRectF2, &pRight, NULL, NULL, 0, 0, 0, 0);
+		break;
+	case (3):
+		hr = sWalk->SetSprites(index2, 8, &pRectF2, &pUp, NULL, NULL, 0, 0, 0, 0);
+		break;
+	case (4):
+		hr = sWalk->SetSprites(index2, 8, &pRectF2, &pDown, NULL, NULL, 0, 0, 0, 0);
+		break;
+	default:break;
+	}
+
+	//hr = sWalk->SetSprites(index2, 8, &pRectF2, &pRectU2, NULL, NULL, 0, 0, 0, 0);
+
 	//RenderImage(pContext, pImage2, 12, 12, index);
 	pContext->DrawSpriteBatch(sBatch, index, 4, pImage, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1_SPRITE_OPTIONS_NONE);
+	pContext->DrawSpriteBatch(sWalk, index2, 8, pWalk, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, D2D1_SPRITE_OPTIONS_NONE);
 
 	hr = pContext->EndDraw();
 	hr = pSwap->Present1(1, 0, &parDxgi);
@@ -407,6 +526,7 @@ void CleanupDevice() {
 	ReleaseCOM(pFactory);
 	ReleaseCOM(pSwap);
 	ReleaseCOM(sBatch);
+	ReleaseCOM(sWalk);
 	ReleaseCOM(pD3DContext);
 	ReleaseCOM(pD3Device);
 }

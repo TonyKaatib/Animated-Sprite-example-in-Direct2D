@@ -44,12 +44,18 @@
     <ClInclude Include="sprite.h">
       <Filter>Arquivos de Cabeçalho</Filter>
     </ClInclude>
+    <ClInclude Include="keyboard.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="shipanimated.png">
       <Filter>Arquivos de Origem</Filter>
     </Image>
     <Image Include="macom.png">
+      <Filter>Arquivos de Recurso</Filter>
+    </Image>
+    <Image Include="Walking.png">
       <Filter>Arquivos de Recurso</Filter>
     </Image>
   </ItemGroup>

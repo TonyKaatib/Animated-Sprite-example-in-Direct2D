@@ -140,12 +140,14 @@
   <ItemGroup>
     <ClInclude Include="d3dengine.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="keyboard.h" />
     <ClInclude Include="sprite.h" />
     <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="macom.png" />
     <Image Include="shipanimated.png" />
+    <Image Include="Walking.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
